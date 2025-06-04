@@ -2,7 +2,7 @@
 #define MODELS_H
 
 const float SLICE_X = 1.0f / 9.0f;
-const float SLICE_Y = 1.0f / 3.0f;
+const float SLICE_Y = 1.0f / 4.0f;
 
 float block[] = {
     -0.5f, -0.5f, -0.5f,

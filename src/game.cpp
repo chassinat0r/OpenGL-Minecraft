@@ -92,6 +92,15 @@ Game::Game(float width, float height, char *title) {
     for (int i = 0; i < tex_count; i++) {
         int j = i + 1;
         float texture[] = {
+            // back
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, 3*SLICE_Y,
+            (float)i*SLICE_X, 3*SLICE_Y,
+            (float)j*SLICE_X, 3*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+
+            // front
             (float)i*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, 2*SLICE_Y,
@@ -99,20 +108,15 @@ Game::Game(float width, float height, char *title) {
             (float)i*SLICE_X, 2*SLICE_Y,
             (float)i*SLICE_X, SLICE_Y,
 
-            (float)i*SLICE_X, SLICE_Y,
-            (float)j*SLICE_X, SLICE_Y,
-            (float)j*SLICE_X, 2*SLICE_Y,
-            (float)j*SLICE_X, 2*SLICE_Y,
+            // left
+            (float)j*SLICE_X, 3*SLICE_Y,
+            (float)i*SLICE_X, 3*SLICE_Y,
             (float)i*SLICE_X, 2*SLICE_Y,
-            (float)i*SLICE_X, SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 3*SLICE_Y,
 
-            (float)i*SLICE_X, 2*SLICE_Y,
-            (float)j*SLICE_X, 2*SLICE_Y,
-            (float)j*SLICE_X, SLICE_Y,
-            (float)j*SLICE_X, SLICE_Y,
-            (float)i*SLICE_X, SLICE_Y,
-            (float)i*SLICE_X, 2*SLICE_Y,
-
+            // right
             (float)i*SLICE_X, 2*SLICE_Y,
             (float)j*SLICE_X, 2*SLICE_Y,
             (float)j*SLICE_X, SLICE_Y,
@@ -120,6 +124,7 @@ Game::Game(float width, float height, char *title) {
             (float)i*SLICE_X, SLICE_Y,
             (float)i*SLICE_X, 2*SLICE_Y,
 
+            // bottom
             (float)i*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, 0.0f,
@@ -127,11 +132,12 @@ Game::Game(float width, float height, char *title) {
             (float)i*SLICE_X, 0.0f,
             (float)i*SLICE_X, SLICE_Y,
 
+            // top
             (float)i*SLICE_X, 1.0f,
             (float)j*SLICE_X, 1.0f,
-            (float)j*SLICE_X, 2*SLICE_Y,
-            (float)j*SLICE_X, 2*SLICE_Y,
-            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 3*SLICE_Y,
+            (float)j*SLICE_X, 3*SLICE_Y,
+            (float)i*SLICE_X, 3*SLICE_Y,
             (float)i*SLICE_X, 1.0f
         };
 
@@ -198,7 +204,7 @@ void Game::update() {
     };
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(textures[6]), textures[6], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(textures[0]), textures[0], GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
