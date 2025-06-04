@@ -38,6 +38,10 @@ class Game {
         float deltaTime = 0.0f;
         float lastFrame = 0.0f;
 
+        float textures[16][5 * 6 * 6];
+
+        int tex_count;
+
 };
 
 #endif

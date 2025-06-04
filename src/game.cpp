@@ -66,6 +66,8 @@ Game::Game(float width, float height, char *title) {
 
     myShader = new Shader("shaders/default.vert", "shaders/default.frag");
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
@@ -84,6 +86,60 @@ Game::Game(float width, float height, char *title) {
 
     int w, h, nrc;
     unsigned char *data = stbi_load("assets/terrain.png", &w, &h, &nrc, 0);
+
+    tex_count = w / 16;
+
+    for (int i = 0; i < tex_count; i++) {
+        int j = i + 1;
+        float texture[] = {
+            (float)i*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, SLICE_Y,
+
+            (float)i*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, SLICE_Y,
+
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)i*SLICE_X, SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)i*SLICE_X, SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+
+            (float)i*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, 0.0f,
+            (float)j*SLICE_X, 0.0f,
+            (float)i*SLICE_X, 0.0f,
+            (float)i*SLICE_X, SLICE_Y,
+
+            (float)i*SLICE_X, 1.0f,
+            (float)j*SLICE_X, 1.0f,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, 1.0f
+        };
+
+        int block_length = sizeof(block) / sizeof(float);
+        int tex_length = sizeof(texture) / sizeof(float);
+
+        mergeArrays(block, block_length, 3, texture, tex_length, 2, textures[i], block_length + tex_length);
+    }
 
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -141,15 +197,8 @@ void Game::update() {
         glm::vec3( 1.0f,  -1.0f, -1.0f),
     };
 
-    int block_length = sizeof(block) / sizeof(float);
-    int tex_length = sizeof(TEX_COBBLESTONE) / sizeof(float);
-    int vertices_length = block_length + tex_length;
-    float vertices[vertices_length];
-
-    mergeArrays(block, block_length, 3, TEX_COBBLESTONE, tex_length, 2, vertices, vertices_length);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(textures[6]), textures[6], GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
