@@ -39,35 +39,48 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 Game::Game(float width, float height, char *title) {
-    glfwInit();
+    glfwInit(); // Init GLFW
+    // Set GL version to OpenGL 3.3 and profile to core
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(width, height, title, NULL, NULL);
-    if (window == NULL) {
+    window = glfwCreateWindow(width, height, title, NULL, NULL); // Create window with given width, height, and title
+    // Check if window was created
+    if (window == NULL) { 
+        // If not created, output error message and terminate
         printf("Failed to create GLFW window\n");
         glfwTerminate();
+        return;
     }
 
-    glfwMakeContextCurrent(window);
-
+    glfwMakeContextCurrent(window); // Set context to window, so all actions will be done in the window
+    
+    // Init GLAD and check for failure
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         printf("Failed to initialise GLAD\n");
         glfwTerminate();
+        return;
     }
 
-    myCamera = new Camera(glm::vec3(0.0f, 0.0f,  3.0f), 5.0f);
+    // Create camera moving at speed 5 at position (0.0, 5.0, 3.0)
+    myCamera = new Camera(glm::vec3(0.0f, 5.0f,  3.0f), 5.0f);
 
+    // Set function to call when the window is resized
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    // Set function to call when the cursor is moved
     glfwSetCursorPosCallback(window, mouse_callback);
 
+    // Grab mouse so the cursor is invisible and all movements update the window
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+    // Load shader for rendering textures
     myShader = new Shader("shaders/default.vert", "shaders/default.frag");
 
-    glEnable(GL_BLEND);
+    // Enable blending so transparency shows in textures if necessary
+    glEnable(GL_BLEND); 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
@@ -92,15 +105,6 @@ Game::Game(float width, float height, char *title) {
     for (int i = 0; i < tex_count; i++) {
         int j = i + 1;
         float texture[] = {
-            // back
-            (float)j*SLICE_X, 2*SLICE_Y,
-            (float)i*SLICE_X, 2*SLICE_Y,
-            (float)i*SLICE_X, 3*SLICE_Y,
-            (float)i*SLICE_X, 3*SLICE_Y,
-            (float)j*SLICE_X, 3*SLICE_Y,
-            (float)j*SLICE_X, 2*SLICE_Y,
-
-            // front
             (float)i*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, 2*SLICE_Y,
@@ -108,15 +112,13 @@ Game::Game(float width, float height, char *title) {
             (float)i*SLICE_X, 2*SLICE_Y,
             (float)i*SLICE_X, SLICE_Y,
 
-            // left
-            (float)j*SLICE_X, 3*SLICE_Y,
-            (float)i*SLICE_X, 3*SLICE_Y,
-            (float)i*SLICE_X, 2*SLICE_Y,
-            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, 2*SLICE_Y,
-            (float)j*SLICE_X, 3*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, SLICE_Y,
 
-            // right
             (float)i*SLICE_X, 2*SLICE_Y,
             (float)j*SLICE_X, 2*SLICE_Y,
             (float)j*SLICE_X, SLICE_Y,
@@ -124,7 +126,13 @@ Game::Game(float width, float height, char *title) {
             (float)i*SLICE_X, SLICE_Y,
             (float)i*SLICE_X, 2*SLICE_Y,
 
-            // bottom
+            (float)i*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)j*SLICE_X, SLICE_Y,
+            (float)i*SLICE_X, SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
+
             (float)i*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, SLICE_Y,
             (float)j*SLICE_X, 0.0f,
@@ -132,12 +140,11 @@ Game::Game(float width, float height, char *title) {
             (float)i*SLICE_X, 0.0f,
             (float)i*SLICE_X, SLICE_Y,
 
-            // top
             (float)i*SLICE_X, 1.0f,
             (float)j*SLICE_X, 1.0f,
-            (float)j*SLICE_X, 3*SLICE_Y,
-            (float)j*SLICE_X, 3*SLICE_Y,
-            (float)i*SLICE_X, 3*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)j*SLICE_X, 2*SLICE_Y,
+            (float)i*SLICE_X, 2*SLICE_Y,
             (float)i*SLICE_X, 1.0f
         };
 
@@ -145,6 +152,23 @@ Game::Game(float width, float height, char *title) {
         int tex_length = sizeof(texture) / sizeof(float);
 
         mergeArrays(block, block_length, 3, texture, tex_length, 2, textures[i], block_length + tex_length);
+    }
+
+    for (int y = -MAP_HEIGHT / 2; y < MAP_HEIGHT / 2; y++) {
+        for (int z = -MAP_WIDTH / 2; z < MAP_WIDTH / 2; z++) {
+            for (int x = -MAP_LENGTH / 2; x < MAP_LENGTH / 2; x++) {
+                int rx = x + 0.5*MAP_LENGTH;
+                int ry = y + 0.5*MAP_HEIGHT;
+                int rz = z + 0.5*MAP_WIDTH;
+                if (y == 0) {
+                    world[ry][rz][rx] = GLCRAFT::COBBLESTONE;
+                } else if (y == 1) {
+                    world[ry][rz][rx] = GLCRAFT::GRASS;
+                } else {
+                    world[ry][rz][rx] = -1;
+                }
+            }
+        }
     }
 
     if (data) {
@@ -196,25 +220,6 @@ void Game::update() {
 
     myShader->use();
 
-    glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f,  -1.0f,  0.0f), 
-        glm::vec3( 1.0f,  -1.0f, 0.0f), 
-        glm::vec3( 0.0f,  -1.0f, -1.0f), 
-        glm::vec3( 1.0f,  -1.0f, -1.0f),
-    };
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(textures[0]), textures[0], GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
     glm::mat4 view = myCamera->generate_view_matrix();
     glm::mat4 projection    = glm::mat4(1.0f);
     // view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
@@ -222,14 +227,44 @@ void Game::update() {
     myShader->setMatrix("projection", projection);
     myShader->setMatrix("view", view);
 
-    glBindVertexArray(VAO);
-    for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++) {
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, cubePositions[i]);
-        // model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
-        myShader->setMatrix("model", model);
+    int current_block = -1;
 
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+    for (int y = -MAP_HEIGHT / 2; y < MAP_HEIGHT / 2; y++) {
+        for (int z = -MAP_WIDTH / 2; z < MAP_WIDTH / 2; z++) {
+            for (int x = -MAP_LENGTH / 2; x < MAP_LENGTH / 2; x++) {
+                int rx = x + 0.5*MAP_LENGTH;
+                int ry = y + 0.5*MAP_HEIGHT;
+                int rz = z + 0.5*MAP_WIDTH;
+                int block = world[ry][rz][rx];
+                if (block != current_block && block != -1) {
+                    current_block = block;
+                    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                    glBufferData(GL_ARRAY_BUFFER, sizeof(textures[block]), textures[block], GL_STATIC_DRAW);
+
+                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+                    glEnableVertexAttribArray(0);
+
+                    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
+                    glEnableVertexAttribArray(1);
+
+                    glBindBuffer(GL_ARRAY_BUFFER, 0);
+                    glBindVertexArray(0);
+
+                    glBindVertexArray(VAO);
+
+                }
+
+                if (block != -1) {
+                    glm::mat4 model = glm::mat4(1.0f);
+                    glm::vec3 cube_pos = glm::vec3( (float) x, (float) y, (float) z );
+                    model = glm::translate(model, cube_pos);
+                    // model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+                    myShader->setMatrix("model", model);
+
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
+            }
+        }
     }
 
     glfwSwapBuffers(window);

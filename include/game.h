@@ -11,6 +11,8 @@
 #include <shader.h>
 #include <camera.h>
 
+#include <constants.h>
+
 class Game {
     public:
         Game(float width, float height, char *title);
@@ -39,6 +41,8 @@ class Game {
         float lastFrame = 0.0f;
 
         float textures[16][5 * 6 * 6];
+
+        int world[MAP_HEIGHT][MAP_WIDTH][MAP_LENGTH];
 
         int tex_count;
 
