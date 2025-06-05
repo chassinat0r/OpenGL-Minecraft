@@ -6,6 +6,7 @@ int main() {
     while (myGame.is_running()) {
         myGame.handle_input();
         myGame.update();
+        myGame.draw();
     }
     myGame.exit();
 }

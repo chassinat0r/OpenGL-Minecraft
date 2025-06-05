@@ -18,6 +18,7 @@ class Game {
         Game(float width, float height, char *title);
 
         void update();
+        void draw();
         void handle_input();
         void exit();
 
@@ -25,8 +26,6 @@ class Game {
 
         inline static float width;
         inline static float height;
-
-        inline static Camera *myCamera;
 
     private:
         GLFWwindow *window;
@@ -41,8 +40,6 @@ class Game {
         float lastFrame = 0.0f;
 
         float textures[16][5 * 6 * 6];
-
-        int world[MAP_HEIGHT][MAP_WIDTH][MAP_LENGTH];
 
         int tex_count;
 

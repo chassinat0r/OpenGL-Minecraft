@@ -4,6 +4,8 @@
 
 #include <models.h>
 
+#include <global.h>
+
 void mergeArrays(float *vertices, int vertices_length,  int vert_stride, float *texture_coords, int tex_length, int tex_stride, float *final_arr, int final_length) {
 	int final_stride = vert_stride + tex_stride; 
 	int vertices_count = final_length / final_stride;
@@ -30,12 +32,12 @@ void mergeArrays(float *vertices, int vertices_length,  int vert_stride, float *
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
-    Game::width = width;
-    Game::height = height;
+    Global::width = width;
+    Global::height = height;
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-    Game::myCamera->mouse_callback(window, xpos, ypos);
+    Global::myCamera->handleMouseMovement(window, xpos, ypos);
 }
 
 Game::Game(float width, float height, char *title) {
@@ -44,6 +46,7 @@ Game::Game(float width, float height, char *title) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
     window = glfwCreateWindow(width, height, title, NULL, NULL); // Create window with given width, height, and title
     // Check if window was created
@@ -63,8 +66,8 @@ Game::Game(float width, float height, char *title) {
         return;
     }
 
-    // Create camera moving at speed 5 at position (0.0, 5.0, 3.0)
-    myCamera = new Camera(glm::vec3(0.0f, 5.0f,  3.0f), 5.0f);
+    // Create camera
+    Global::myCamera = new Camera(0.0f, 10.0f, 0.0f, 5.0f);
 
     // Set function to call when the window is resized
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -161,11 +164,15 @@ Game::Game(float width, float height, char *title) {
                 int ry = y + 0.5*MAP_HEIGHT;
                 int rz = z + 0.5*MAP_WIDTH;
                 if (y == 0) {
-                    world[ry][rz][rx] = GLCRAFT::COBBLESTONE;
+                    Global::world[ry][rz][rx] = GLCRAFT::COBBLESTONE;
                 } else if (y == 1) {
-                    world[ry][rz][rx] = GLCRAFT::GRASS;
+                    Global::world[ry][rz][rx] = GLCRAFT::GRASS;
                 } else {
-                    world[ry][rz][rx] = -1;
+                    Global::world[ry][rz][rx] = -1;
+                }
+
+                if (y == 2 && x == 5 && z == 5) {
+                    Global::world[ry][rz][rx] = GLCRAFT::LOG;
                 }
             }
         }
@@ -195,24 +202,37 @@ void Game::handle_input() {
         glfwSetWindowShouldClose(window, true);
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        myCamera->move_forward(deltaTime);
+        Global::myCamera->setControl("FORWARD", true);
+        Global::myCamera->setControl("BACKWARD", false);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        myCamera->move_backward(deltaTime);
+        Global::myCamera->setControl("BACKWARD", true);
+        Global::myCamera->setControl("FORWARD", false);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        myCamera->move_left(deltaTime);
+        Global::myCamera->setControl("LEFT", true);
+        Global::myCamera->setControl("RIGHT", false);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        myCamera->move_right(deltaTime);
+        Global::myCamera->setControl("RIGHT", true);
+        Global::myCamera->setControl("LEFT", false);
     }
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {
+        Global::myCamera->setControl("FORWARD", false);
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_RELEASE) {
+        Global::myCamera->setControl("BACKWARD", false);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_RELEASE) {
+        Global::myCamera->setControl("LEFT", false);
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_RELEASE) {
+        Global::myCamera->setControl("RIGHT", false);
+    }  
 }
 
-void Game::update() {
-    float currentFrame = glfwGetTime();
-    deltaTime = currentFrame - lastFrame;
-    lastFrame = currentFrame;
-
+void Game::draw() {
     glClearColor(135.0f / 255.0f, 206.0f / 255.0f, 235.0f / 255.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -220,10 +240,10 @@ void Game::update() {
 
     myShader->use();
 
-    glm::mat4 view = myCamera->generate_view_matrix();
+    glm::mat4 view = Global::myCamera->generateViewMatrix();
     glm::mat4 projection    = glm::mat4(1.0f);
     // view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-    projection = glm::perspective(glm::radians(70.0f), (float)width / (float)height, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(70.0f), Global::width / Global::height, 0.1f, 100.0f);
     myShader->setMatrix("projection", projection);
     myShader->setMatrix("view", view);
 
@@ -235,7 +255,7 @@ void Game::update() {
                 int rx = x + 0.5*MAP_LENGTH;
                 int ry = y + 0.5*MAP_HEIGHT;
                 int rz = z + 0.5*MAP_WIDTH;
-                int block = world[ry][rz][rx];
+                int block = Global::world[ry][rz][rx];
                 if (block != current_block && block != -1) {
                     current_block = block;
                     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -251,7 +271,6 @@ void Game::update() {
                     glBindVertexArray(0);
 
                     glBindVertexArray(VAO);
-
                 }
 
                 if (block != -1) {
@@ -266,6 +285,14 @@ void Game::update() {
             }
         }
     }
+}
+
+void Game::update() {
+    float currentFrame = glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+
+    Global::myCamera->update(deltaTime);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
