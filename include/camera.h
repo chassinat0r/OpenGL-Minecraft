@@ -32,14 +32,22 @@ class Camera {
         float lastY;
 
         float speed;
+        float jumpHeight = 1.0f;
+        float jumpProgress = 0.0f;
+        bool jumping = false;
 
         glm::vec3 cameraPos;
+        glm::vec3 lastCameraPos;
         glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
         glm::vec3 cameraMoveFront = glm::vec3(0.0f, 0.0f, -1.0f);
 
         glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
+        bool floating = false;
+        float velocityY = 0.0f;
+        float maxVelocityY = 4.0f;
+        float gravity = 0.2f;
 
-        std::map<std::string, bool> controls{{"FORWARD", false}, {"BACKWARD", false}, {"LEFT", false}, {"RIGHT", false}};
+        std::map<std::string, bool> controls{{"FORWARD", false}, {"BACKWARD", false}, {"LEFT", false}, {"RIGHT", false}, {"JUMP", false}};
 
 };
 // class Camera {
