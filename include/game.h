@@ -58,6 +58,8 @@ class Game {
 
         int blockSelected = GLCRAFT::STONE;
 
+        bool tabEnabled = true;
+
 };
 
 #endif

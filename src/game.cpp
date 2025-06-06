@@ -243,6 +243,19 @@ void Game::handle_input() {
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         Global::myCamera->setControl("JUMP", true);
     }
+    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
+        if (tabEnabled) {
+            int cursorStatus = glfwGetInputMode(window, GLFW_CURSOR);
+            if (cursorStatus == GLFW_CURSOR_DISABLED) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            } 
+            if (cursorStatus == GLFW_CURSOR_NORMAL) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+        }
+
+        tabEnabled = false;
+    }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {
         Global::myCamera->setControl("FORWARD", false);
@@ -258,6 +271,9 @@ void Game::handle_input() {
     } 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) {
         Global::myCamera->setControl("JUMP", false);
+    }
+    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE) {
+        tabEnabled = true;
     }
 }
 
