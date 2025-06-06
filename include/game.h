@@ -10,6 +10,7 @@
 
 #include <shader.h>
 #include <camera.h>
+#include <models.h>
 
 #include <constants.h>
 
@@ -31,10 +32,22 @@ class Game {
         GLFWwindow *window;
 
         Shader *myShader;
+        Shader *flatShader;
 
-        unsigned int VAO, VBO;
+        unsigned int VAO, VBO, EBO;
+        float flat_vertices[20] = {
+            0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+            0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 
+            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f
+        };
 
-        unsigned int terrain;
+        unsigned int indices[6] = {
+            0, 1, 3, // first triangle
+            1, 2, 3  // second triangle
+        };
+
+        unsigned int terrain, split;
 
         float deltaTime = 0.0f;
         float lastFrame = 0.0f;
@@ -42,6 +55,8 @@ class Game {
         float textures[16][5 * 6 * 6];
 
         int tex_count;
+
+        int blockSelected = GLCRAFT::STONE;
 
 };
 

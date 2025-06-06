@@ -6,7 +6,7 @@
 
 #include <global.h>
 
-void mergeArrays(float *vertices, int vertices_length,  int vert_stride, float *texture_coords, int tex_length, int tex_stride, float *final_arr, int final_length) {
+void mergeArrays(const float *vertices, int vertices_length,  int vert_stride, const float *texture_coords, int tex_length, int tex_stride, float *final_arr, int final_length) {
 	int final_stride = vert_stride + tex_stride; 
 	int vertices_count = final_length / final_stride;
 
@@ -74,11 +74,13 @@ Game::Game(float width, float height, char *title) {
     // Set function to call when the cursor is moved
     glfwSetCursorPosCallback(window, mouse_callback);
 
-    // Grab mouse so the cursor is invisible and all movements update the window
+    // // Grab mouse so the cursor is invisible and all movements update the window
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Load shader for rendering textures
     myShader = new Shader("shaders/default.vert", "shaders/default.frag");
+
+    flatShader = new Shader("shaders/flat.vert", "shaders/flat.frag");
 
     // Enable blending so transparency shows in textures if necessary
     glEnable(GL_BLEND); 
@@ -86,6 +88,7 @@ Game::Game(float width, float height, char *title) {
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 
     glBindVertexArray(VAO);
     
@@ -151,12 +154,13 @@ Game::Game(float width, float height, char *title) {
             (float)i*SLICE_X, 1.0f
         };
 
-        int block_length = sizeof(block) / sizeof(float);
+        int block_length = sizeof(blockVertices) / sizeof(float);
         int tex_length = sizeof(texture) / sizeof(float);
 
-        mergeArrays(block, block_length, 3, texture, tex_length, 2, textures[i], block_length + tex_length);
+        mergeArrays(blockVertices, block_length, 3, texture, tex_length, 2, textures[i], block_length + tex_length);
     }
 
+    
     for (int y = -MAP_HEIGHT / 2; y < MAP_HEIGHT / 2; y++) {
         for (int z = -MAP_WIDTH / 2; z < MAP_WIDTH / 2; z++) {
             for (int x = -MAP_LENGTH / 2; x < MAP_LENGTH / 2; x++) {
@@ -178,6 +182,25 @@ Game::Game(float width, float height, char *title) {
         }
     }
 
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+
+    stbi_image_free(data);
+
+    glGenTextures(1, &split);
+    glBindTexture(GL_TEXTURE_2D, split); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    data = stbi_load("assets/split.png", &w, &h, &nrc, 0);
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -239,16 +262,15 @@ void Game::handle_input() {
 }
 
 void Game::draw() {
+    glBindTexture(GL_TEXTURE_2D, terrain);
+    
     glClearColor(135.0f / 255.0f, 206.0f / 255.0f, 235.0f / 255.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glBindTexture(GL_TEXTURE_2D, terrain);
 
     myShader->use();
 
     glm::mat4 view = Global::myCamera->generateViewMatrix();
     glm::mat4 projection    = glm::mat4(1.0f);
-    // view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
     projection = glm::perspective(glm::radians(70.0f), Global::width / Global::height, 0.1f, 100.0f);
     myShader->setMatrix("projection", projection);
     myShader->setMatrix("view", view);
@@ -264,6 +286,7 @@ void Game::draw() {
                 int block = Global::world[ry][rz][rx];
                 if (block != current_block && block != -1) {
                     current_block = block;
+
                     glBindBuffer(GL_ARRAY_BUFFER, VBO);
                     glBufferData(GL_ARRAY_BUFFER, sizeof(textures[block]), textures[block], GL_STATIC_DRAW);
 
@@ -291,6 +314,27 @@ void Game::draw() {
             }
         }
     }
+
+    flatShader->use();
+    glBindTexture(GL_TEXTURE_2D, split);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(flat_vertices), flat_vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glm::mat4 model = glm::mat4(1.0f); // Start with an identity matrix
+    model = glm::scale(model, glm::vec3((Global::height / Global::width)*0.1, 0.1, 1));
+
+    flatShader->setMatrix("model", model);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void Game::update() {

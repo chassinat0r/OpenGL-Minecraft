@@ -49,6 +49,8 @@ class Camera {
 
         std::map<std::string, bool> controls{{"FORWARD", false}, {"BACKWARD", false}, {"LEFT", false}, {"RIGHT", false}, {"JUMP", false}};
 
+        glm::vec3 direction;
+
 };
 // class Camera {
 //     public:
