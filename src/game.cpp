@@ -40,13 +40,29 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     Global::myCamera->handleMouseMovement(window, xpos, ypos);
 }
 
+void mouse_btn_callback(GLFWwindow* window, int button, int action, int mods) {
+    int rx = Global::blockLookingAt[0];
+    int ry = Global::blockLookingAt[1];
+    int rz = Global::blockLookingAt[2];
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        if (rx != -1 && ry != -1 && rz != -1) {
+            Global::world[ry][rz][rx] = -1;
+        }
+    }
+    // if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+    //     if (rx != -1 && ry != -1 && rz != -1) {
+    //         Global::world[ry+1][rz][rx] = Global::blockSelected;
+    //     }
+    // }
+}
+
 Game::Game(float width, float height, char *title) {
     glfwInit(); // Init GLFW
     // Set GL version to OpenGL 3.3 and profile to core
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    // glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
     window = glfwCreateWindow(width, height, title, NULL, NULL); // Create window with given width, height, and title
     // Check if window was created
@@ -73,6 +89,7 @@ Game::Game(float width, float height, char *title) {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     // Set function to call when the cursor is moved
     glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetMouseButtonCallback(window, mouse_btn_callback);
 
     // // Grab mouse so the cursor is invisible and all movements update the window
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -359,6 +376,41 @@ void Game::update() {
     lastFrame = currentFrame;
 
     Global::myCamera->update(deltaTime);
+
+    glm::vec3 rayCastPos = Global::myCamera->getRayCastStart();
+    glm::vec3 rayCastFinish = Global::myCamera->getRayCastFinish();
+    glm::vec3 rayCastDirection = Global::myCamera->getRayCastDirection();
+    const float rayCastSpeed = 0.2f;
+    glm::vec3 rayCastVelocity = rayCastSpeed * rayCastDirection;
+    
+    // printf("Ray cast start: %.2f, %.2f, %.2f\n", rayCastPos[0], rayCastPos[1], rayCastPos[2]);
+    // printf("Ray cast finish: %.2f, %.2f, %.2f\n", rayCastFinish[0], rayCastFinish[1], rayCastFinish[2]);
+
+    const float distanceToTravel = 3.0f;
+    float distanceTravelled = 0.0f;
+
+    Global::blockLookingAt = glm::vec3(-1, -1, -1);
+
+    while (distanceTravelled < distanceToTravel) {
+        int x = (int)std::round(rayCastPos[0]);
+        int y = (int)std::round(rayCastPos[1]);
+        int z = (int)std::round(rayCastPos[2]);
+
+        int rx = x + 0.5*MAP_LENGTH;
+        int ry = y + 0.5*MAP_HEIGHT;
+        int rz = z + 0.5*MAP_WIDTH;
+
+        int block = Global::world[ry][rz][rx];
+
+        if (block != -1) {
+            Global::blockLookingAt = glm::vec3(rx, ry, rz);
+            break;
+        }
+        // printf("Block: (%d, %d, %d)\n", x, y, z);
+        distanceTravelled += rayCastSpeed;
+
+        rayCastPos += rayCastVelocity;
+    }
 
     glfwSwapBuffers(window);
     glfwPollEvents();

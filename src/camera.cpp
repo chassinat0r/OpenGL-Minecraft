@@ -169,3 +169,20 @@ float Camera::getX() { return cameraPos[0]; }
 float Camera::getY() { return cameraPos[1]; }
 float Camera::getZ() { return cameraPos[2]; }
 
+glm::vec3 Camera::getRayCastStart() {
+    return cameraPos;
+}
+
+glm::vec3 Camera::getRayCastDirection() {
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    
+    return direction;
+}
+
+glm::vec3 Camera::getRayCastFinish() {
+    getRayCastDirection();
+    glm::vec3 finish = cameraPos + 3.0f*direction;
+    return finish;
+}

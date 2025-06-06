@@ -56,9 +56,9 @@ class Game {
 
         int tex_count;
 
-        int blockSelected = GLCRAFT::STONE;
 
         bool tabEnabled = true;
+
 
 };
 

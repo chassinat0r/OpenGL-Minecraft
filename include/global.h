@@ -3,6 +3,9 @@
 
 #include <constants.h>
 #include <camera.h>
+#include <models.h>
+
+#include <glm/glm.hpp>
 
 class Global {
     public:
@@ -12,6 +15,10 @@ class Global {
         static inline float height;
 
         static inline Camera *myCamera;
+
+        static inline glm::vec3 blockLookingAt = glm::vec3(-1, -1, -1);
+
+        static inline int blockSelected = GLCRAFT::STONE;
 };
 
 #endif
