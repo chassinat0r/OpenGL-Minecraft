@@ -54,25 +54,28 @@ void Camera::handleResize(int lastX, int lastY) {
 }
 
 void Camera::update(float deltaTime) {
+    glm::vec3 velocity = glm::vec3(0, 0, 0);
     lastCameraPos = cameraPos;
     if (controls["FORWARD"]) {
-        cameraPos += speed * cameraMoveFront * deltaTime;
+        velocity = speed * cameraMoveFront * deltaTime;
     } else if (controls["BACKWARD"]) {
-        cameraPos -= speed * cameraMoveFront * deltaTime;
+        velocity = -speed * cameraMoveFront * deltaTime;
     }
 
     if (controls["LEFT"]) {
-        cameraPos -= glm::normalize(glm::cross(cameraMoveFront, cameraUp)) * speed * deltaTime;
+        velocity = -glm::normalize(glm::cross(cameraMoveFront, cameraUp)) * speed * deltaTime;
     } else if (controls["RIGHT"]) {
-        cameraPos += glm::normalize(glm::cross(cameraMoveFront, cameraUp)) * speed * deltaTime;
+        velocity = glm::normalize(glm::cross(cameraMoveFront, cameraUp)) * speed * deltaTime;
     }
+
+    cameraPos += velocity;
 
     if (controls["JUMP"] && !floating) {
         jumping = true;
     }
 
     bool blockBelow = false;
-    bool revertPosition = false;
+
     for (int y = -MAP_HEIGHT / 2; y < MAP_HEIGHT / 2; y++) {
         for (int z = -MAP_WIDTH / 2; z < MAP_WIDTH / 2; z++) {
             for (int x = -MAP_LENGTH / 2; x < MAP_LENGTH / 2; x++) {
@@ -83,26 +86,19 @@ void Camera::update(float deltaTime) {
                 
                 if (block != -1) {
                     if (abs((float)x - cameraPos[0]) < 1.0f) {
-                        if (cameraPos[1] - 1.0f >= y + 0.4f && cameraPos[1] - 1.0f <= y + 0.6f) {
+                        if (abs((float)y - cameraPos[1]) < 1.5f) {
                             if (abs((float)z - cameraPos[2]) < 1.0f) {
                                 blockBelow = true;
                             }
                         }
                         
                     }
-                    if (abs((float)x - cameraPos[0]) < 1.0f) {
-                        if (cameraPos[1] - 1.0f < y && y < cameraPos[1]) {
-                            if (abs((float)z - cameraPos[2]) < 1.0f) {
-                                revertPosition = true;
-                            }
-                        }
-                    }
                 }
 
-                if (blockBelow && revertPosition) { break; }
+                if (blockBelow) { break; }
             }
         }
-        if (blockBelow && revertPosition) { break; };
+        if (blockBelow) { break; };
     }
 
     floating = !blockBelow;
@@ -128,7 +124,33 @@ void Camera::update(float deltaTime) {
 
     cameraPos[1] -= velocityY * deltaTime;
 
-    if (revertPosition) {
+    bool revert = false;
+
+    for (int x = (int)cameraPos[0]; x <= (int)cameraPos[0]+1; x++) {
+        for (int y = (int)cameraPos[1]; y <= (int)cameraPos[1]+1; y++) {
+            for (int z = (int)cameraPos[2]; z <= (int)cameraPos[2]+1; z++) {
+                int rx = x + 0.5*MAP_LENGTH;
+                int ry = y + 0.5*MAP_HEIGHT;
+                int rz = z + 0.5*MAP_WIDTH;
+                int block = Global::world[ry][rz][rx];
+                if (block != -1) {
+                    if (abs((float)x - cameraPos[0]) < 1.0f) {
+                        if (abs((float)y - cameraPos[1]) < 1.0f || abs((float)y - (cameraPos[1] + 1)) < 1.0f) {
+                            if (abs((float)z - cameraPos[2]) < 1.0f) {
+                                revert = true;
+                                break;
+                                printf("Collision with camera at (%.2f, %.2f, %.2f) and block (%d, %d, %d)\n", cameraPos[0], cameraPos[1], cameraPos[2], x, y, z);
+                            }
+                        }
+                    }
+                }
+            }
+            if (revert) { break; }
+        }
+        if (revert) { break; }
+    }
+
+    if (revert) {
         cameraPos = lastCameraPos;
     }
 }

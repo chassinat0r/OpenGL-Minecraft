@@ -171,7 +171,7 @@ Game::Game(float width, float height, char *title) {
                     Global::world[ry][rz][rx] = -1;
                 }
 
-                if (y == 2 && x == 5 && z == 5) {
+                if (y == 3 && x == 5 && z == 5) {
                     Global::world[ry][rz][rx] = GLCRAFT::LOG;
                 }
             }
